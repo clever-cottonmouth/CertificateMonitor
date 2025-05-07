@@ -1,82 +1,33 @@
-﻿using CertificateMonitor.Database;
-using CertificateMonitor.Helpers;
-using CertificateMonitor.Model;
-//using CertificateMonitor.Models;
-using CertificateMonitor.Services;
-using Topshelf;
+﻿using CertificateMonitor.Services;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.IO;
 
 namespace CertificateMonitor
 {
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            HostFactory.Run(x =>
-            {
-                x.Service<CertificateMonitorService>(s =>
-                {
-                    s.ConstructUsing(name => new CertificateMonitorService());
-                    s.WhenStarted(tc => tc.Start());
-                    s.WhenStopped(tc => tc.Stop());
-                });
-                x.RunAsLocalSystem();
-                x.SetDescription("Certificate Usage Monitoring Service");
-                x.SetDisplayName("CertificateMonitor");
-                x.SetServiceName("CertificateMonitor");
-            });
-        }
-    }
+            // Load configuration
+            IConfiguration config = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("config/appsettings.json", optional: false, reloadOnChange: true)
+                .Build();
 
-    public class CertificateMonitorService
-    {
-        private readonly MySqlLogger _logger;
-        private bool _running;
+            string connectionString = config.GetConnectionString("MySql");
+            var dbService = new DatabaseService(connectionString);
+            var certService = new CertificateService(dbService);
 
-        public CertificateMonitorService()
-        {
-            string connectionString = "Server=localhost;Database=CertificateUsageDB;Uid=root;Pwd=1234;";
-            _logger = new MySqlLogger(connectionString);
-        }
+            Console.WriteLine("Starting passive certificate snapshot monitor...");
 
-        public void Start()
-        {
-            _running = true;
-            Task.Run(() =>
-            {
-                CryptographicMonitor.StartMonitoring((thumbprint, processName) =>
-                {
-                    if (!_running) return;
-                    try
-                    {
-                        var (activeProcess, windowTitle) = ProcessMonitor.GetActiveProcessInfo();
-                        string url = BrowserMonitor.GetBrowserUrl(processName).Result;
-                        var certificate = CertificateHelper.FindCertificateByThumbprint(thumbprint);
-                        string certName = certificate?.Subject ?? "Unknown";
+            var timer = new System.Timers.Timer(10000);
+            timer.Elapsed += (s, e) => certService.CheckCertificates();
+            timer.Start();
 
-                        var usage = new CertificateUsage
-                        {
-                            ProcessName = processName,
-                            WindowName = windowTitle,
-                            Url = url,
-                            CertificateUsed = certName,
-                            Thumbprint = thumbprint,
-                            DateTime = DateTime.Now
-                        };
-                        _logger.LogCertificateUsage(usage);
-
-                        Console.WriteLine($"Logged: {processName}, {windowTitle}, {url}, {certName}, {thumbprint}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error: {ex.Message}");
-                    }
-                });
-            });
-        }
-
-        public void Stop()
-        {
-            _running = false;
+            Console.WriteLine("Press Enter to exit.");
+            Console.ReadLine();
+            timer.Stop();
         }
     }
 }

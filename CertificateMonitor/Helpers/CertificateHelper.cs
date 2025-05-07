@@ -15,17 +15,28 @@ namespace CertificateMonitor.Helpers
 
         public static X509Certificate2 FindCertificateByThumbprint(string thumbprint)
         {
-            var stores = new[] { StoreName.My, StoreName.Root, StoreName.TrustedPeople };
+            var stores = new[] { StoreName.My, StoreName.Root, StoreName.TrustedPeople, StoreName.CertificateAuthority };
             foreach (var storeName in stores)
             {
                 var certificates = GetCertificates(storeName, StoreLocation.CurrentUser);
-                var cert = certificates.Find(X509FindType.FindByThumbprint, thumbprint, false).OfType<X509Certificate2>().FirstOrDefault();
-                if (cert != null) return cert;
+                var cert = certificates.Find(X509FindType.FindByThumbprint, thumbprint, false)
+                    .OfType<X509Certificate2>().FirstOrDefault();
+                if (cert != null)
+                {
+                    Console.WriteLine($"Certificate found in {storeName} (CurrentUser): {thumbprint}");
+                    return cert;
+                }
 
                 certificates = GetCertificates(storeName, StoreLocation.LocalMachine);
-                cert = certificates.Find(X509FindType.FindByThumbprint, thumbprint, false).OfType<X509Certificate2>().FirstOrDefault();
-                if (cert != null) return cert;
+                cert = certificates.Find(X509FindType.FindByThumbprint, thumbprint, false)
+                    .OfType<X509Certificate2>().FirstOrDefault();
+                if (cert != null)
+                {
+                    Console.WriteLine($"Certificate found in {storeName} (LocalMachine): {thumbprint}");
+                    return cert;
+                }
             }
+            Console.WriteLine($"Certificate not found: {thumbprint}");
             return null;
         }
     }
