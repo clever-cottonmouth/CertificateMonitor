@@ -2,10 +2,11 @@
 {
     public class CertificateLog
     {
-        public DateTime Timestamp { get; set; }
-        public string ProcessName { get; set; }
-        public string WindowTitle { get; set; }
-        public string CertificateSubject { get; set; }
-        public string Thumbprint { get; set; }
+        public DateTime? Timestamp { get; set; }
+        public string? ProcessName { get; set; }
+        public string? WindowTitle { get; set; }
+        public string? CertificateSubject { get; set; }
+        public string? Thumbprint { get; set; }
+        public string? Url { get; set; }
     }
 }
