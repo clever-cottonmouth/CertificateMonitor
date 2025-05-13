@@ -21,7 +21,7 @@ namespace CertificateMonitor
 
             Console.WriteLine("Starting real-time certificate usage monitor with polling for all applications...");
 
-            var timer = new System.Timers.Timer(12000); // 12-second interval
+            var timer = new System.Timers.Timer(30000); // Increased to 30 seconds for better performance
             timer.Elapsed += (s, e) => certService.MonitorCertificateUsage();
             timer.Start();
 
