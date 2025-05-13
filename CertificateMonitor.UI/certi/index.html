@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Certificate Usage Logs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        #last-updated {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h2>Certificate Usage Logs</h2>
+    <div id="last-updated">Last updated: never</div>
+    <table>
+        <thead>
+            <tr>
+				<th>Id</th>
+                <th>Nome do Processo</th>
+                <th>Nome da Janela</th>
+                <th>Url</th>
+                <th>Certificado Utilizado</th>
+                <th>Thumbprint</th>
+				<th>Data/Hora</th>       
+            </tr>
+        </thead>
+        <tbody id="logTable">
+            <tr><td colspan="6">Loading...</td></tr>
+        </tbody>
+    </table>
+
+    <script>
+        function fetchLogs() {
+            fetch('fetch_logs.php')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('logTable').innerHTML = html;
+                    const now = new Date();
+                    document.getElementById('last-updated').innerText = "Last updated: " + now.toLocaleTimeString();
+                })
+                .catch(err => {
+                    document.getElementById('logTable').innerHTML = '<tr><td colspan="6">Error loading data</td></tr>';
+                    console.error('Error:', err);
+                });
+        }
+
+        // Load immediately and set interval
+        fetchLogs();
+        setInterval(fetchLogs, 5000); // every 5 seconds
+    </script>
+</body>
+</html>
+
+
+
+
+<!---CREATE DATABASE certificate_monitor;
+
+USE certificate_monitor;
+
+CREATE TABLE certificate_usage (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    process_name VARCHAR(255),
+    window_name VARCHAR(255),
+    url TEXT,
+    certificate_subject TEXT,
+    thumbprint VARCHAR(255),
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+-->
